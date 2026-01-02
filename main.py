@@ -47,14 +47,15 @@ class MainWindow(Gtk.Window):
         self.stop_dropdown.connect("changed", self.on_stop_selected)
 
         self.arrivals_explanation_label = Gtk.Label(label="Arrivals:")
-        self.arrivals_label = Gtk.Label()
+
+        self.arrivals_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         
         self.main_box.add(self.routesLabel)
         self.main_box.add(self.route_dropdown)
         self.main_box.add(self.stopsLabel)
         self.main_box.add(self.stop_dropdown)
         self.main_box.add(self.arrivals_explanation_label)
-        self.main_box.add(self.arrivals_label)
+        self.main_box.add(self.arrivals_box)
         self.add(self.main_box)
 
         getRoutes()
@@ -95,6 +96,10 @@ class MainWindow(Gtk.Window):
         arrivals = self.arrivalsResponse["resultSet"]["arrival"]
         self.arrival_info = ""
 
+        # Removing old arrival info
+        for child in self.arrivals_box.get_children():
+            self.arrivals_box.remove(child)
+
         for arrival in arrivals:
             route = arrival["route"]
             short_sign = arrival["shortSign"]
@@ -111,10 +116,27 @@ class MainWindow(Gtk.Window):
             arrival_info = f"{short_sign} - {minutes} min {load_percent}% full"
             print(arrival_info)
 
-            self.arrival_info += arrival_info + "\n"
-        
-        self.arrivals_label.set_text(self.arrival_info)
+            self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
 
+            self.arrivalShortSign = Gtk.Label(label=f"{short_sign}")
+            self.arrivalShortSign.get_style_context().add_class("short_sign")
+            self.individual_arrival_box.add(self.arrivalShortSign)
+            self.arrivalShortSign.show_all()
+
+            self.arrivalTime = Gtk.Label(label=f"{minutes} min")
+            self.arrivalTime.get_style_context().add_class("arrival_time")
+            self.individual_arrival_box.add(self.arrivalTime)
+            self.arrivalTime.show_all()
+
+            self.arrival_load_percent = Gtk.Label(label=f"{load_percent}% full")
+            self.arrival_load_percent.get_style_context().add_class("load_percent")
+            self.individual_arrival_box.add(self.arrival_load_percent)
+            self.arrival_load_percent.show_all()
+
+            self.arrivals_box.add(self.individual_arrival_box)
+            self.arrivals_box.show_all()
+        
 win = MainWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()

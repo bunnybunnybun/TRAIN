@@ -6,6 +6,22 @@ label {
     margin: 10px;
 }
 
+label.short_sign {
+    margin: 10px;
+    font-size: larger;
+}
+
+label.arrival_time {
+    margin: 10px;
+    font-size: medium;
+}
+
 combobox {
     margin: 10px;
+}
+
+box.individual_arrival_box {
+    background-color: rgb(0, 71, 133);
+    margin: 10px;
+    border-radius: 10px;
 }
