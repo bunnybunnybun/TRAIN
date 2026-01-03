@@ -13,6 +13,7 @@ routesUrl = f"https://developer.trimet.org/ws/V1/routeConfig?appID={appID}&json=
 class MainWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title="Trimet Bus Tracker")
+        self.set_default_size(800, 400)
         self.set_border_width(20)
 
         self.css_provider = Gtk.CssProvider()
@@ -34,8 +35,9 @@ class MainWindow(Gtk.Window):
             for route in self.routes_data:
                 self.route_dropdown.append_text(route["desc"])
 
-
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.big_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         self.routesLabel = Gtk.Label(label="Select route:")
         self.route_dropdown = Gtk.ComboBoxText()
@@ -48,15 +50,20 @@ class MainWindow(Gtk.Window):
 
         self.arrivals_explanation_label = Gtk.Label(label="Arrivals:")
 
+        self.arrivals_scrolling_window = Gtk.ScrolledWindow()
+        self.arrivals_scrolling_window.set_size_request(70, 150)
         self.arrivals_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        
-        self.main_box.add(self.routesLabel)
-        self.main_box.add(self.route_dropdown)
-        self.main_box.add(self.stopsLabel)
-        self.main_box.add(self.stop_dropdown)
-        self.main_box.add(self.arrivals_explanation_label)
-        self.main_box.add(self.arrivals_box)
-        self.add(self.main_box)
+        self.arrivals_scrolling_window.add(self.arrivals_box)
+
+        self.left_box.add(self.routesLabel)
+        self.left_box.add(self.route_dropdown)
+        self.left_box.add(self.stopsLabel)
+        self.left_box.add(self.stop_dropdown)
+        self.right_box.add(self.arrivals_explanation_label)
+        self.right_box.pack_start(self.arrivals_scrolling_window, True, True, 1)
+        self.big_box.add(self.left_box)
+        self.big_box.pack_start(self.right_box, True, True, 1)
+        self.add(self.big_box)
 
         getRoutes()
     
@@ -111,9 +118,12 @@ class MainWindow(Gtk.Window):
                 arrival_time = arrival["scheduled"]
             minutes = (arrival_time - current_time) // (1000 * 60)
 
-            load_percent = arrival["loadPercentage"]
+            if "loadPercentage" in arrival:
+                load_percent = f"{arrival["loadPercentage"]}% full"
+            else:
+                load_percent = "Load percentage is N/A for this bus"
 
-            arrival_info = f"{short_sign} - {minutes} min {load_percent}% full"
+            arrival_info = f"{short_sign} - {minutes} min {load_percent}"
             print(arrival_info)
 
             self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -129,7 +139,7 @@ class MainWindow(Gtk.Window):
             self.individual_arrival_box.add(self.arrivalTime)
             self.arrivalTime.show_all()
 
-            self.arrival_load_percent = Gtk.Label(label=f"{load_percent}% full")
+            self.arrival_load_percent = Gtk.Label(label=load_percent)
             self.arrival_load_percent.get_style_context().add_class("load_percent")
             self.individual_arrival_box.add(self.arrival_load_percent)
             self.arrival_load_percent.show_all()
