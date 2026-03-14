@@ -1,9 +1,9 @@
 # TrimetVehicleTracker
-An app for seeing the current schedule and location of all Trimet vehicles (buses, MAXs and street cars).
+An app for seeing when the next bus/MAX train/street car is going to arrive at your stop. Only works for Trimet transportation.
 
 ![screenshot](screenshot.png)
 
-Built using Python and GTK3. Vehicle location data is gathered from [Trimet's Web Services API](https://developer.trimet.org/ws_docs/). Thanks Trimet :)
+Built using Python and GTK3. Vehicle data is gathered from [Trimet's Web Services API](https://developer.trimet.org/ws_docs/). Thanks Trimet :)
 
 ## To install:
 Make sure you have [PyGObject](https://pygobject.gnome.org/getting_started.html) installed, then clone this repository.
