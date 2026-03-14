@@ -1,4 +1,4 @@
-# TrimetVehicleTracker
+# TRAIN - Transit Realtime Arrival Information
 An app for seeing when the next bus/MAX train/street car is going to arrive at your stop. Only works for Trimet transportation.
 
 ![screenshot](screenshot.png)
