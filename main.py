@@ -3,7 +3,7 @@ import json
 import os
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 appID = "9BB16D426AE6D7BB1EDAED215"
@@ -39,16 +39,16 @@ class MainWindow(Gtk.Window):
         self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
-        self.routesLabel = Gtk.Label(label="Select route:")
+        self.routesLabel = Gtk.Label(label="Route")
         self.route_dropdown = Gtk.ComboBoxText()
         self.route_dropdown.set_entry_text_column(0)
         self.route_dropdown.connect("changed", self.on_route_selected)
 
-        self.stopsLabel = Gtk.Label(label="Select one of the stops along the route:")
+        self.stopsLabel = Gtk.Label(label="Line & Stop")
         self.stop_dropdown = Gtk.ComboBoxText()
         self.stop_dropdown.connect("changed", self.on_stop_selected)
 
-        self.arrivals_explanation_label = Gtk.Label(label="Arrivals:")
+        self.arrivals_explanation_label = Gtk.Label(label="Arrivals")
 
         self.arrivals_scrolling_window = Gtk.ScrolledWindow()
         self.arrivals_scrolling_window.set_size_request(70, 150)
@@ -63,10 +63,15 @@ class MainWindow(Gtk.Window):
         self.right_box.pack_start(self.arrivals_scrolling_window, True, True, 1)
         self.big_box.add(self.left_box)
         self.big_box.pack_start(self.right_box, True, True, 1)
+
+        self.overlay = Gtk.Overlay()
         self.add(self.big_box)
 
         getRoutes()
-    
+
+        # 2. Start the 30-second loop here
+        GLib.timeout_add_seconds(30, self.refresh)
+
     def on_route_selected(self, combo):
         self.stop_dropdown.remove_all()
         self.stop_data = []
@@ -74,12 +79,12 @@ class MainWindow(Gtk.Window):
         index = combo.get_active()
         if index == -1:
             return
-        
+
         self.selected_route = self.routes_data[index]
         route_number = self.selected_route["route"]
 
         print(f"selected route: {route_number}")
-        
+
         for direction in self.selected_route["dir"]:
             direction_name = direction["desc"]
 
@@ -89,10 +94,14 @@ class MainWindow(Gtk.Window):
                 self.stop_data.append(stop)
 
     def on_stop_selected(self, combo):
+        from datetime import datetime, timedelta
+
+        self.last_combo = combo  # 3. Save reference for auto-refresh
+
         index = combo.get_active()
         if index == -1:
             return
-        
+
         selected_stop = self.stop_data[index]
         locid = selected_stop["locid"]
         print(f"selected stop locid: {locid}")
@@ -111,21 +120,33 @@ class MainWindow(Gtk.Window):
             route = arrival["route"]
             short_sign = arrival["shortSign"]
 
-            current_time = self.arrivalsResponse["resultSet"]["queryTime"]
-            if arrival.get("status") == "estimated" and "estimated" in arrival:
-                arrival_time = arrival["estimated"]
-            else:
-                arrival_time = arrival["scheduled"]
-            minutes = (arrival_time - current_time) // (1000 * 60)
+            current_time_ms = self.arrivalsResponse["resultSet"]["queryTime"]
 
+            # Decide whether to use "estimated" time or "scheduled" time
+            if arrival.get("status") == "estimated" and "estimated" in arrival:
+                arrival_time_ms = arrival["estimated"]
+            else:
+                arrival_time_ms = arrival["scheduled"]
+
+            #calculate minutes remaining
+            minutes = (arrival_time_ms - current_time_ms) // (1000 * 60)
+
+            #Format raw milliseconds into a readable time
+            formatted_time = datetime.fromtimestamp(arrival_time_ms / 1000).strftime("%I:%M %p")
+
+            # Combine time + minutes remaining
+            if minutes <= 0:
+                time_display_str = f"{formatted_time} | Arriving Now"
+            else:
+                time_display_str = f"{formatted_time} | {minutes} min"
+
+            # --- Load percentage check ---
             if "loadPercentage" in arrival:
-                load_percent = f"{arrival["loadPercentage"]}% full"
+                load_percent = f"{arrival['loadPercentage']}% full"
             else:
                 load_percent = "Load percentage is N/A for this bus"
 
-            arrival_info = f"{short_sign} - {minutes} min {load_percent}"
-            print(arrival_info)
-
+            # --- GTK UI construction ---
             self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
 
@@ -134,7 +155,7 @@ class MainWindow(Gtk.Window):
             self.individual_arrival_box.add(self.arrivalShortSign)
             self.arrivalShortSign.show_all()
 
-            self.arrivalTime = Gtk.Label(label=f"{minutes} min")
+            self.arrivalTime = Gtk.Label(label=time_display_str)
             self.arrivalTime.get_style_context().add_class("arrival_time")
             self.individual_arrival_box.add(self.arrivalTime)
             self.arrivalTime.show_all()
@@ -146,7 +167,14 @@ class MainWindow(Gtk.Window):
 
             self.arrivals_box.add(self.individual_arrival_box)
             self.arrivals_box.show_all()
-        
+
+# 4. Added refresh method
+    def refresh(self):
+        if self.last_combo is not None:
+            print("Auto-refreshing arrival times...")
+            self.on_stop_selected(self.last_combo)
+        return True  # Must return True to keep repeating every 30 seconds
+
 win = MainWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()

@@ -6,6 +6,18 @@ label {
     margin: 10px;
 }
 
+window {
+    background-color: #084c8d;
+
+    /* Background image settings */
+    background-image: url('TriMet Stripes.png');
+    background-repeat: no-repeat;
+    background-position: right bottom;
+
+    /* 50% width and 50% height makes it take up ~1/4 of the total window area */
+    background-size: 100% 100%;
+}
+
 label.short_sign {
     margin: 10px;
     font-size: larger;
@@ -24,4 +36,13 @@ box.individual_arrival_box {
     background-color: rgb(0, 71, 133);
     margin: 10px;
     border-radius: 10px;
+}
+
+image.corner_logo {
+    margin-right: 0px;
+    margin-bottom: 0px;
+}
+
+box {
+    background-color: transparent;
 }
