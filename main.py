@@ -29,8 +29,8 @@ class MainWindow(Gtk.Window):
         )
 
         self.routes_data = []
-        self.dir_data = []   # Stores direction data for active route
-        self.stop_data = []  # Stores stop data for active direction
+        self.dir_data = []   # Direction data
+        self.stop_data = []  # Stop data for active direction
 
         def getRoutes():
             self.routesResponse = requests.get(routesUrl).json()
@@ -39,58 +39,81 @@ class MainWindow(Gtk.Window):
             for route in self.routes_data:
                 self.route_dropdown.append_text(route["desc"])
 
-        self.big_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.main_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
 
-        # 1. Route Dropdown
+        self.top_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+
+        # MenuButton & Popover Container
+        self.menu_button = Gtk.MenuButton()
+        self.menu_button.set_image(Gtk.Image.new_from_icon_name("open-menu-symbolic", Gtk.IconSize.BUTTON))
+        self.menu_button.set_halign(Gtk.Align.START)
+        self.menu_button.set_valign(Gtk.Align.CENTER)
+
+        self.popover = Gtk.Popover()
+        self.popover.set_transitions_enabled(False)
+        self.popover.set_position(Gtk.PositionType.BOTTOM)
+        self.menu_button.set_popover(self.popover)
+
+        self.top_bar.pack_start(self.menu_button, False, False, 0)
+
+        # Controls box inside Popover
+        self.controls_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.controls_box.set_border_width(12)
+
+        # Route Dropdown
         self.routesLabel = Gtk.Label(label="Route")
         self.route_dropdown = Gtk.ComboBoxText.new_with_entry()
         self.route_dropdown.set_entry_text_column(0)
         self.setup_searchable_combo(self.route_dropdown)
         self.route_dropdown.connect("changed", self.on_route_selected)
 
-        # 2. Direction Dropdown (NEW)
+        # Direction Dropdown
         self.dirLabel = Gtk.Label(label="Direction")
         self.dir_dropdown = Gtk.ComboBoxText()
         self.dir_dropdown.connect("changed", self.on_dir_selected)
 
-        # 3. Stop Dropdown
+        # Stop Dropdown
         self.stopsLabel = Gtk.Label(label="Stop")
         self.stop_dropdown = Gtk.ComboBoxText.new_with_entry()
         self.stop_dropdown.set_entry_text_column(0)
         self.setup_searchable_combo(self.stop_dropdown)
         self.stop_dropdown.connect("changed", self.on_stop_selected)
 
+
+        self.controls_box.add(self.routesLabel)
+        self.controls_box.add(self.route_dropdown)
+        self.controls_box.add(self.dirLabel)
+        self.controls_box.add(self.dir_dropdown)
+        self.controls_box.add(self.stopsLabel)
+        self.controls_box.add(self.stop_dropdown)
+
+        self.popover.add(self.controls_box)
+
+        self.controls_box.show_all()
+
+        self.center_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.center_box.set_halign(Gtk.Align.CENTER)
+
         self.arrivals_explanation_label = Gtk.Label(label="Arrivals")
 
         self.arrivals_scrolling_window = Gtk.ScrolledWindow()
-        self.arrivals_scrolling_window.set_size_request(70, 150)
+        self.arrivals_scrolling_window.set_size_request(400, 150)
         self.arrivals_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.arrivals_scrolling_window.add(self.arrivals_box)
 
-        # Pack all three dropdowns into the left box
-        self.left_box.add(self.routesLabel)
-        self.left_box.add(self.route_dropdown)
-        self.left_box.add(self.dirLabel)
-        self.left_box.add(self.dir_dropdown)
-        self.left_box.add(self.stopsLabel)
-        self.left_box.add(self.stop_dropdown)
+        self.center_box.add(self.arrivals_explanation_label)
+        self.center_box.pack_start(self.arrivals_scrolling_window, True, True, 0)
 
-        self.right_box.add(self.arrivals_explanation_label)
-        self.right_box.pack_start(self.arrivals_scrolling_window, True, True, 1)
-        self.big_box.add(self.left_box)
-        self.big_box.pack_start(self.right_box, True, True, 1)
+        self.main_vbox.pack_start(self.top_bar, False, False, 0)
+        self.main_vbox.pack_start(self.center_box, True, True, 0)
 
-        self.add(self.big_box)
+        self.add(self.main_vbox)
 
         getRoutes()
 
-        # 2. Start the 30-second loop here
         GLib.timeout_add_seconds(30, self.refresh)
 
     def setup_searchable_combo(self, combo):
-        """Attaches interactive auto-completion filtering to a ComboBoxText."""
         entry = combo.get_child()
         completion = Gtk.EntryCompletion()
         completion.set_model(combo.get_model())
@@ -103,13 +126,11 @@ class MainWindow(Gtk.Window):
             value = model[iter][0]
             return value is not None and key.lower() in value.lower()
 
-        # FIX: When a user clicks or hits Enter on a search match,
-        # set the active index on the combo box so "changed" triggers properly!
         def on_match_selected(completion, model, iter):
             path = model.get_path(iter)
             if path:
                 combo.set_active(path.get_indices()[0])
-            return False  # Let GTK finish inserting the text into the entry
+            return False
 
         completion.set_match_func(match_func, None)
         completion.connect("match-selected", on_match_selected)
@@ -147,7 +168,7 @@ class MainWindow(Gtk.Window):
 
         selected_direction = self.dir_data[index]
 
-        # Populate stop dropdown for the chosen direction only
+        # Populate stop dropdown for chosen direction
         for stop in selected_direction["stop"]:
             self.stop_dropdown.append_text(stop["desc"])
             self.stop_data.append(stop)
@@ -155,7 +176,7 @@ class MainWindow(Gtk.Window):
     def on_stop_selected(self, combo):
         from datetime import datetime, timedelta
 
-        self.last_combo = combo  # 3. Save reference for auto-refresh
+        self.last_combo = combo
 
         index = combo.get_active()
         if index == -1:
@@ -167,15 +188,13 @@ class MainWindow(Gtk.Window):
 
         self.arrivalsUrl = f"https://developer.trimet.org/ws/v2/arrivals?appID={appID}&LocIDs={locid}&json=true"
 
-# --- SAFE API REQUEST WITH ERROR HANDLING ---
-        try:
-            # Added a 5-second timeout so it doesn't hang indefinitely if Wi-Fi drops
+        try: #Fixed app crashing when loss of wifi
             response = requests.get(self.arrivalsUrl, timeout=5)
             response.raise_for_status()
             self.arrivalsResponse = response.json()
         except requests.exceptions.RequestException as e:
             print(f"Network error fetching arrivals (will retry in 30s): {e}")
-            return  # Skip updating the UI this time, but leave the app running!
+            return
 
 
         arrivals = self.arrivalsResponse["resultSet"]["arrival"]
@@ -209,13 +228,12 @@ class MainWindow(Gtk.Window):
             else:
                 time_display_str = f"{formatted_time} | {minutes} min"
 
-            # --- Load percentage check ---
             if "loadPercentage" in arrival:
                 load_percent = f"{arrival['loadPercentage']}% full"
             else:
                 load_percent = "Load percentage is N/A for this bus"
 
-            # --- GTK UI construction ---
+            #GTK UI construction
             self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
 
@@ -237,12 +255,12 @@ class MainWindow(Gtk.Window):
             self.arrivals_box.add(self.individual_arrival_box)
             self.arrivals_box.show_all()
 
-# 4. Added refresh method
+#Added refresh method
     def refresh(self):
         if self.last_combo is not None:
             print("Auto-refreshing arrival times...")
             self.on_stop_selected(self.last_combo)
-        return True  # Must return True to keep repeating every 30 seconds
+        return True
 
 win = MainWindow()
 win.connect("destroy", Gtk.main_quit)
