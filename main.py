@@ -15,6 +15,7 @@ class MainWindow(Gtk.Window):
     def __init__(self):
         super().__init__(title="Trimet Bus Tracker")
         self.set_default_size(800, 400)
+        self.fullscreen()
         self.set_border_width(20)
 
 
