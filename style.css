@@ -13,8 +13,6 @@ window {
     background-image: url('TriMet Stripes.png');
     background-repeat: no-repeat;
     background-position: right bottom;
-
-    /* 50% width and 50% height makes it take up ~1/4 of the total window area */
     background-size: 100% 100%;
 }
 
@@ -33,7 +31,7 @@ combobox {
 }
 
 box.individual_arrival_box {
-    background-color: rgb(0, 71, 133);
+    background-color: transparent;
     margin: 10px;
     border-radius: 10px;
 }
