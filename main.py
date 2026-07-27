@@ -99,7 +99,7 @@ class MainWindow(Gtk.Window):
         self.arrivals_explanation_label.get_style_context().add_class("arrivals_header")
 
         self.arrivals_scrolling_window = Gtk.ScrolledWindow()
-        self.arrivals_scrolling_window.set_size_request(400, 150)
+        self.arrivals_scrolling_window.set_size_request(600, 150)
         self.arrivals_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.arrivals_scrolling_window.add(self.arrivals_box)
 

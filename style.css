@@ -53,12 +53,14 @@ label.scheduled_time_OT {
     margin: 0px;
     font-size: 20px;
     color: green;
+    font-weight: bold;
 }
 
 label.scheduled_time_Late {
     margin: 0px;
     font-size: 20px;
     color: #d74949;
+    font-weight: bold;
 }
 
 label.load_percent {
