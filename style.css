@@ -16,22 +16,12 @@ window {
     background-size: 100% 100%;
 }
 
-menubutton button image {
-    background-color: transparent;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    padding: 4;
-}
+
 
 label.short_sign {
     margin: 10px;
     font-size: larger;
-}
-
-label.arrival_time {
-    margin: 10px;
-    font-size: medium;
+    color: white;
 }
 
 combobox {
@@ -44,23 +34,45 @@ box.individual_arrival_box {
     border-radius: 10px;
 }
 
+
+
 label.arrival_time {
     margin: 10px;
     font-size: medium;
-    color: #ffd700;
+}
+
+label.scheduled_time_OT {
+    margin: 5px;
+    font-size: small;
+    color: green;
+}
+
+label.scheduled_time_Late {
+    margin: 5px;
+    font-size: small;
+    color: #d74949;
 }
 
 label.load_percent {
     margin: 5px;
     font-size: small;
-    color: #b0c4de;
+    color: white;
+}
+
+button.main_select_button {
+    background-color: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+menubutton button image {
+    color: #ffffff;
+    -gtk-icon-transform: scale(1.4);
 }
 
 image.corner_logo {
     margin-right: 0px;
     margin-bottom: 0px;
-}
-
-box {
-    background-color: transparent;
 }

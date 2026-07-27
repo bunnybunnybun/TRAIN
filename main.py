@@ -45,6 +45,7 @@ class MainWindow(Gtk.Window):
 
         # MenuButton & Popover Container
         self.menu_button = Gtk.MenuButton()
+        self.menu_button.get_style_context().add_class("main_select_button")
         self.menu_button.set_image(Gtk.Image.new_from_icon_name("open-menu-symbolic", Gtk.IconSize.BUTTON))
         self.menu_button.set_halign(Gtk.Align.START)
         self.menu_button.set_valign(Gtk.Align.CENTER)
@@ -210,11 +211,38 @@ class MainWindow(Gtk.Window):
 
             current_time_ms = self.arrivalsResponse["resultSet"]["queryTime"]
 
+
+
+
             # Decide whether to use "estimated" time or "scheduled" time
             if arrival.get("status") == "estimated" and "estimated" in arrival:
                 arrival_time_ms = arrival["estimated"]
             else:
                 arrival_time_ms = arrival["scheduled"]
+
+            #format scheduled time
+            scheduled_time_ms = arrival.get("scheduled")
+            if scheduled_time_ms:
+                scheduled_formatted = datetime.fromtimestamp(scheduled_time_ms / 1000).strftime("%I:%M %p")
+                #calculate if arrival time is late, early, or on time.
+                minutes_dif = (arrival_time_ms - scheduled_time_ms) // (1000 * 60)
+                #
+                on_time = True
+                if minutes_dif < 0:
+                    time_dif_display_str = f"{minutes_dif}"
+
+                elif minutes_dif == 0:
+                    time_dif_display_str = "On time"
+
+                else:
+                    time_dif_display_str = f"+{minutes_dif}"
+                    on_time = False
+                scheduled_display_str = f"Scheduled: {scheduled_formatted} | {time_dif_display_str}"
+
+
+            else:
+                scheduled_display_str = "Schedule N/A"
+
 
             #calculate minutes remaining
             minutes = (arrival_time_ms - current_time_ms) // (1000 * 60)
@@ -237,16 +265,27 @@ class MainWindow(Gtk.Window):
             self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
 
+            #Route short sign
             self.arrivalShortSign = Gtk.Label(label=f"{short_sign}")
             self.arrivalShortSign.get_style_context().add_class("short_sign")
             self.individual_arrival_box.add(self.arrivalShortSign)
             self.arrivalShortSign.show_all()
 
+            #Estimated/actual arrival time
             self.arrivalTime = Gtk.Label(label=time_display_str)
             self.arrivalTime.get_style_context().add_class("arrival_time")
             self.individual_arrival_box.add(self.arrivalTime)
             self.arrivalTime.show_all()
 
+            #Scheduled time
+            self.scheduledTime = Gtk.Label(label=scheduled_display_str)
+            if on_time == True:
+                self.scheduledTime.get_style_context().add_class("scheduled_time_OT")
+            else:
+                self.scheduledTime.get_style_context().add_class("scheduled_time_Late")
+            self.individual_arrival_box.add(self.scheduledTime)
+
+            #Load percentage
             self.arrival_load_percent = Gtk.Label(label=load_percent)
             self.arrival_load_percent.get_style_context().add_class("load_percent")
             self.individual_arrival_box.add(self.arrival_load_percent)
