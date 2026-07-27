@@ -96,6 +96,7 @@ class MainWindow(Gtk.Window):
         self.center_box.set_halign(Gtk.Align.CENTER)
 
         self.arrivals_explanation_label = Gtk.Label(label="Arrivals")
+        self.arrivals_explanation_label.get_style_context().add_class("arrivals_header")
 
         self.arrivals_scrolling_window = Gtk.ScrolledWindow()
         self.arrivals_scrolling_window.set_size_request(400, 150)

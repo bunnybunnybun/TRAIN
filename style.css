@@ -16,12 +16,19 @@ window {
     background-size: 100% 100%;
 }
 
-
+label.arrivals_header {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 25px;
+    color: white;
+}
 
 label.short_sign {
-    margin: 10px;
-    font-size: larger;
+    margin-top: 0px;
+    margin-bottom: 3px;
+    font-size: 30px;
     color: white;
+    font-weight: bold;
 }
 
 combobox {
@@ -37,25 +44,26 @@ box.individual_arrival_box {
 
 
 label.arrival_time {
-    margin: 10px;
-    font-size: medium;
+    margin: 0px;
+    font-size: 25px;
+    color: white;
 }
 
 label.scheduled_time_OT {
-    margin: 5px;
-    font-size: small;
+    margin: 0px;
+    font-size: 20px;
     color: green;
 }
 
 label.scheduled_time_Late {
-    margin: 5px;
-    font-size: small;
+    margin: 0px;
+    font-size: 20px;
     color: #d74949;
 }
 
 label.load_percent {
-    margin: 5px;
-    font-size: small;
+    margin: 0;
+    font-size: 20px;
     color: white;
 }
 
@@ -67,8 +75,8 @@ button.main_select_button {
     outline: none;
 }
 
-menubutton button image {
-    color: #ffffff;
+button.main_select_button image {
+    color: white;
     -gtk-icon-transform: scale(1.4);
 }
 
