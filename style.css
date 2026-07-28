@@ -16,10 +16,14 @@ window {
     background-size: 100% 100%;
 }
 
+box.top_bar {
+
+}
+
 label.arrivals_header {
     margin-top: 0px;
     margin-bottom: 0px;
-    font-size: 25px;
+    font-size: 20px;
     color: white;
 }
 
@@ -49,6 +53,7 @@ label.arrival_time {
     color: white;
 }
 
+
 label.scheduled_time_OT {
     margin: 0px;
     font-size: 20px;
@@ -56,16 +61,14 @@ label.scheduled_time_OT {
     font-weight: bold;
 }
 
-label.scheduled_time_Late {
+label.scheduled_time {
     margin: 0px;
-    font-size: 20px;
-    color: #d74949;
-    font-weight: bold;
+    font-size: 17px;
 }
 
 label.load_percent {
     margin: 0;
-    font-size: 20px;
+    font-size: 17px;
     color: white;
 }
 
@@ -80,6 +83,13 @@ button.main_select_button {
 button.main_select_button image {
     color: white;
     -gtk-icon-transform: scale(1.4);
+}
+
+label.refresh_marker {
+    color: white;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 17px;
 }
 
 image.corner_logo {

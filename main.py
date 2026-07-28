@@ -42,6 +42,8 @@ class MainWindow(Gtk.Window):
         self.main_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
 
         self.top_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        self.top_bar.get_style_context().add_class("top_bar")
+        self.top_bar.set_size_request(800, 30)
 
         # MenuButton & Popover Container
         self.menu_button = Gtk.MenuButton()
@@ -50,12 +52,24 @@ class MainWindow(Gtk.Window):
         self.menu_button.set_halign(Gtk.Align.START)
         self.menu_button.set_valign(Gtk.Align.CENTER)
 
+
+
+        #add ability to show refresh (trigger to show refresh near bottom)
+        self.refresh_marker_label = Gtk.Label(label = "")
+        self.refresh_marker_label.get_style_context().add_class("refresh_marker")
+        self.refresh_marker_label.set_halign(Gtk.Align.START)
+        self.refresh_marker_label.set_valign(Gtk.Align.CENTER)
+
+
+
         self.popover = Gtk.Popover()
         self.popover.set_transitions_enabled(False)
         self.popover.set_position(Gtk.PositionType.BOTTOM)
         self.menu_button.set_popover(self.popover)
 
+
         self.top_bar.pack_start(self.menu_button, False, False, 0)
+        self.top_bar.pack_start(self.refresh_marker_label, False, False, 0)
 
         # Controls box inside Popover
         self.controls_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -95,7 +109,7 @@ class MainWindow(Gtk.Window):
         self.center_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.center_box.set_halign(Gtk.Align.CENTER)
 
-        self.arrivals_explanation_label = Gtk.Label(label="Arrivals")
+        self.arrivals_explanation_label = Gtk.Label(label="↖ select a stop 🚏")
         self.arrivals_explanation_label.get_style_context().add_class("arrivals_header")
 
         self.arrivals_scrolling_window = Gtk.ScrolledWindow()
@@ -186,11 +200,15 @@ class MainWindow(Gtk.Window):
 
         selected_stop = self.stop_data[index]
         locid = selected_stop["locid"]
-        print(f"selected stop locid: {locid}")
+        stop_name = selected_stop["desc"]
+
+        self.arrivals_explanation_label.set_text(f"{stop_name}")
+
+        print(f"selected stop locid: {locid} ({stop_name})")
 
         self.arrivalsUrl = f"https://developer.trimet.org/ws/v2/arrivals?appID={appID}&LocIDs={locid}&json=true"
 
-        try: #Fixed app crashing when loss of wifi
+        try:
             response = requests.get(self.arrivalsUrl, timeout=5)
             response.raise_for_status()
             self.arrivalsResponse = response.json()
@@ -207,6 +225,10 @@ class MainWindow(Gtk.Window):
             self.arrivals_box.remove(child)
 
         for arrival in arrivals:
+
+            self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
+
             route = arrival["route"]
             short_sign = arrival["shortSign"]
 
@@ -228,22 +250,31 @@ class MainWindow(Gtk.Window):
                 #calculate if arrival time is late, early, or on time.
                 minutes_dif = (arrival_time_ms - scheduled_time_ms) // (1000 * 60)
                 #
-                on_time = True
+
                 if minutes_dif < 0:
-                    time_dif_display_str = f"{minutes_dif}"
+                    time_dif_display_str = f"{minutes_dif} min"
+                    color = "green"
 
                 elif minutes_dif == 0:
                     time_dif_display_str = "On time"
+                    color = "green"
 
                 else:
-                    time_dif_display_str = f"+{minutes_dif}"
-                    on_time = False
-                scheduled_display_str = f"Scheduled: {scheduled_formatted} | {time_dif_display_str}"
+                    time_dif_display_str = f"+{minutes_dif} min"
+                    color = "#d74949"
 
+                scheduled_display_str = (
+                    f"Scheduled: {scheduled_formatted} | "
+                    f'<span foreground="{color}" weight="bold">{time_dif_display_str}</span>'
+                )
 
             else:
                 scheduled_display_str = "Schedule N/A"
 
+            self.scheduledTime = Gtk.Label()
+            self.scheduledTime.set_markup(scheduled_display_str)
+            self.scheduledTime.get_style_context().add_class("scheduled_time")
+            self.individual_arrival_box.add(self.scheduledTime)
 
             #calculate minutes remaining
             minutes = (arrival_time_ms - current_time_ms) // (1000 * 60)
@@ -253,21 +284,32 @@ class MainWindow(Gtk.Window):
 
             # Combine time + minutes remaining
             if minutes <= 0:
-                time_display_str = f"{formatted_time} | Arriving Now"
+                time_display_str = f"{formatted_time} | Due"
             else:
-                time_display_str = f"{formatted_time} | {minutes} min"
+                time_display_str = f"{formatted_time} | »{minutes} min"
 
             if "loadPercentage" in arrival:
                 load_percent = f"{arrival['loadPercentage']}% full"
             else:
-                load_percent = "Load percentage is N/A for this bus"
+                load_percent = ""
 
             #GTK UI construction
             self.individual_arrival_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
             self.individual_arrival_box.get_style_context().add_class("individual_arrival_box")
 
             #Route short sign
-            self.arrivalShortSign = Gtk.Label(label=f"{short_sign}")
+            if "Red" in short_sign:
+                self.arrivalShortSign = Gtk.Label(label=f"🔴{short_sign}")
+            elif "Orange" in short_sign:
+                self.arrivalShortSign = Gtk.Label(label=f"🟠{short_sign}")
+            elif "Yellow" in short_sign:
+                self.arrivalShortSign = Gtk.Label(label=f"🟡{short_sign}")
+            elif "Green" in short_sign:
+                self.arrivalShortSign = Gtk.Label(label=f"🟢{short_sign}")
+            elif "Blue" in short_sign:
+                self.arrivalShortSign = Gtk.Label(label=f"🔵{short_sign}")
+            else:
+                self.arrivalShortSign = Gtk.Label(label=f"{short_sign}")
             self.arrivalShortSign.get_style_context().add_class("short_sign")
             self.individual_arrival_box.add(self.arrivalShortSign)
             self.arrivalShortSign.show_all()
@@ -279,11 +321,10 @@ class MainWindow(Gtk.Window):
             self.arrivalTime.show_all()
 
             #Scheduled time
-            self.scheduledTime = Gtk.Label(label=scheduled_display_str)
-            if on_time == True:
-                self.scheduledTime.get_style_context().add_class("scheduled_time_OT")
-            else:
-                self.scheduledTime.get_style_context().add_class("scheduled_time_Late")
+
+
+
+            self.scheduledTime.get_style_context().add_class("scheduled_time")
             self.individual_arrival_box.add(self.scheduledTime)
 
             #Load percentage
@@ -295,11 +336,17 @@ class MainWindow(Gtk.Window):
             self.arrivals_box.add(self.individual_arrival_box)
             self.arrivals_box.show_all()
 
-#Added refresh method
+#refresh method
+    def reset_refresh_marker(self):
+        self.refresh_marker_label.set_text(" ")
+        return False
+
     def refresh(self):
         if self.last_combo is not None:
+            self.refresh_marker_label.set_text("🗘")
             print("Auto-refreshing arrival times...")
             self.on_stop_selected(self.last_combo)
+            GLib.timeout_add_seconds(3, self.reset_refresh_marker)
         return True
 
 win = MainWindow()
